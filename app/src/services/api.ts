@@ -20,8 +20,6 @@ import { getAccessToken } from "./tokenStore";
 // Now pointing at your real backend — see .env's EXPO_PUBLIC_API_URL.
 const USE_MOCK = false;
 
-console.log("process.env.EXPO_PUBLIC_API_URL", process.env.EXPO_PUBLIC_API_URL);
-
 export const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL ?? "https://api.littlelog.app/v1",
   timeout: 10000,

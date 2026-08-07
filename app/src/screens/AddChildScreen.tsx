@@ -108,11 +108,13 @@ export function AddChildScreen({ onDone }: { onDone?: () => void } = {}) {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.screen}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    <SafeAreaView
+      style={{ flex: 1, paddingVertical: Platform.OS == "android" ? 50 : 0 }}
     >
-      <SafeAreaView>
+      <KeyboardAvoidingView
+        style={styles.screen}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <ScrollView contentContainerStyle={styles.content}>
           <Text style={[typeScale.h1, { color: colors.pine }]}>
             {isFirstChild ? "Add your first child" : "Add a child"}
@@ -199,8 +201,8 @@ export function AddChildScreen({ onDone }: { onDone?: () => void } = {}) {
             style={{ marginTop: spacing.xl }}
           />
         </ScrollView>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl + 120,
   },
   input: {
     borderWidth: 1,

@@ -65,9 +65,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paperRaised,
     borderRadius: radius.md,
     paddingVertical: 14,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     position: "relative",
     overflow: "hidden",
+    width: "45%",
   },
   wrapperLarge: {
     // minWidth: 200,

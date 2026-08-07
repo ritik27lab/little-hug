@@ -47,13 +47,13 @@ export function MainTabNavigator() {
         },
 
         tabBarLabelStyle: {
-          fontFamily: fonts.bodyMedium,
+          fontFamily: fonts.display,
           fontSize: 10,
           marginBottom: 4,
         },
 
         tabBarIconStyle: {
-          marginTop: 2,
+          marginTop: 1,
         },
 
         tabBarButton: (props) => (

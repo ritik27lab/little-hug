@@ -1,7 +1,8 @@
 import React from "react";
-import { ScrollView, Pressable, Text, View, StyleSheet } from "react-native";
+import { ScrollView, Pressable, Text, StyleSheet } from "react-native";
 import { Child } from "@/types";
 import { colors, radius, type as typeScale } from "@/theme/theme";
+import { ChildAvatar } from "@/components/ChildAvatar";
 
 interface ChildSelectorProps {
   childList: Child[];
@@ -9,9 +10,12 @@ interface ChildSelectorProps {
   onSelect: (id: string) => void;
 }
 
-export function ChildSelector({ childList, selectedChildId, onSelect }: ChildSelectorProps) {
+export function ChildSelector({
+  childList,
+  selectedChildId,
+  onSelect,
+}: ChildSelectorProps) {
   if (childList.length <= 1) return null;
-
   return (
     <ScrollView
       horizontal
@@ -30,11 +34,14 @@ export function ChildSelector({ childList, selectedChildId, onSelect }: ChildSel
               selected && { backgroundColor: child.avatarColor },
             ]}
           >
-            <View style={[styles.avatar, { backgroundColor: selected ? colors.white : child.avatarColor }]} />
+            <ChildAvatar
+              color={selected ? colors.white : child.avatarColor}
+              size={22}
+            />
             <Text
               style={[
                 typeScale.bodyMedium,
-                { color: selected ? colors.white : colors.ink },
+                { color: selected ? colors.white : colors.ink, marginLeft: 8 },
               ]}
             >
               {child.name}
@@ -47,24 +54,15 @@ export function ChildSelector({ childList, selectedChildId, onSelect }: ChildSel
 }
 
 const styles = StyleSheet.create({
-  row: {
-    gap: 8,
-    paddingVertical: 4,
-  },
+  row: { gap: 8, paddingVertical: 4 },
   pill: {
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1.5,
     borderRadius: radius.pill,
-    paddingVertical: 8,
-    paddingHorizontal: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     marginRight: 8,
     backgroundColor: colors.paperRaised,
-  },
-  avatar: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
   },
 });
