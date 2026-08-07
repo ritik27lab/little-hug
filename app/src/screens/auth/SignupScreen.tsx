@@ -7,11 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
 } from "react-native";
 import { useApp } from "@/context/AppContext";
 import { register } from "@/services/api";
 import { colors, spacing, type as typeScale, radius } from "@/theme/theme";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { getErrorMessage } from "@/services/apiError";
 
 export function SignupScreen({
   onNavigateLogin,
@@ -24,25 +26,14 @@ export function SignupScreen({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // async function handleSignup() {
-  //   setLoading(true);
-  //   try {
-  //     await register(name, email, password);
-  //     signIn();
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-
   async function handleSignup() {
     setLoading(true);
-
     try {
-      await register(name, email, password);
-
-      await signIn();
-    } catch (e: any) {
-      alert(e.message || "Unable to create account");
+      const result = await register(name, email, password);
+      await signIn(result.token, result.refreshToken);
+    } catch (err) {
+      console.log("----->", err);
+      // Alert.alert("Couldn't create your account", getErrorMessage(err));
     } finally {
       setLoading(false);
     }

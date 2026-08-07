@@ -1,1 +1,35 @@
+# Mac OS
 .DS_Store
+*.DS_Store
+
+# Node modules
+node_modules/
+**/node_modules/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build outputs
+dist/
+build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# Expo
+.expo/
+
+# API docs (if generated)
+api.json
+
+# Docker (if not needed in repo)
+docker-compose.yml
+*.tar
+
+# Yarn lock (if you're using npm)
+yarn.lock
+package-lock.json

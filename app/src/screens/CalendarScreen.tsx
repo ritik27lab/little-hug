@@ -7,6 +7,7 @@ import {
   Pressable,
   Alert,
   Linking,
+  SafeAreaView,
 } from "react-native";
 import { addMonths, subMonths, format } from "date-fns";
 import { Ionicons } from "@expo/vector-icons";
@@ -83,98 +84,102 @@ export function CalendarScreen() {
 
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={typeScale.h1}>Calendar</Text>
-      <Text
-        style={[
-          typeScale.body,
-          { color: colors.inkMuted, marginTop: 4, marginBottom: spacing.md },
-        ]}
-      >
-        A month at a glance — tap any day to correct it.
-      </Text>
-
-      <ChildSelector
-        childList={children}
-        selectedChildId={selectedChildId}
-        onSelect={selectChild}
-      />
-
-      <View style={styles.monthNav}>
-        <Pressable
-          onPress={() => setMonthDate((d) => subMonths(d, 1))}
-          hitSlop={12}
+      <SafeAreaView>
+        <Text style={typeScale.h1}>Calendar</Text>
+        <Text
+          style={[
+            typeScale.body,
+            { color: colors.inkMuted, marginTop: 4, marginBottom: spacing.md },
+          ]}
         >
-          <Ionicons name="chevron-back" size={22} color={colors.pine} />
-        </Pressable>
-        <Text style={typeScale.h3}>{format(monthDate, "MMMM yyyy")}</Text>
-        <Pressable
-          onPress={() => setMonthDate((d) => addMonths(d, 1))}
-          hitSlop={12}
-        >
-          <Ionicons name="chevron-forward" size={22} color={colors.pine} />
-        </Pressable>
-      </View>
+          A month at a glance — tap any day to correct it.
+        </Text>
 
-      <View style={[styles.calendarCard, shadow.card]}>
-        <CalendarGrid
-          monthDate={monthDate}
-          attendance={attendance}
-          onDayPress={setSelectedDate}
+        <ChildSelector
+          childList={children}
+          selectedChildId={selectedChildId}
+          onSelect={selectChild}
         />
-      </View>
 
-      {selectedDate && (
-        <View style={[styles.correctCard, shadow.card]}>
-          <Text style={[typeScale.bodyMedium, { marginBottom: spacing.sm }]}>
-            Mark {format(new Date(selectedDate + "T00:00:00"), "MMM d")} as:
-          </Text>
-          <View style={styles.statusRow}>
-            {STATUS_OPTIONS.map((status) => (
-              <Pressable
-                key={status}
-                onPress={() => handleStatusPick(status)}
-                style={styles.statusChip}
-              >
-                <Text style={[typeScale.captionMedium, { color: colors.ink }]}>
-                  {status.charAt(0).toUpperCase() + status.slice(1)}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-          <PrimaryButton
-            label="Cancel"
-            variant="ghost"
-            onPress={() => setSelectedDate(null)}
-            style={{ marginTop: spacing.sm }}
+        <View style={styles.monthNav}>
+          <Pressable
+            onPress={() => setMonthDate((d) => subMonths(d, 1))}
+            hitSlop={12}
+          >
+            <Ionicons name="chevron-back" size={22} color={colors.pine} />
+          </Pressable>
+          <Text style={typeScale.h3}>{format(monthDate, "MMMM yyyy")}</Text>
+          <Pressable
+            onPress={() => setMonthDate((d) => addMonths(d, 1))}
+            hitSlop={12}
+          >
+            <Ionicons name="chevron-forward" size={22} color={colors.pine} />
+          </Pressable>
+        </View>
+
+        <View style={[styles.calendarCard, shadow.card]}>
+          <CalendarGrid
+            monthDate={monthDate}
+            attendance={attendance}
+            onDayPress={setSelectedDate}
           />
         </View>
-      )}
 
-      <View style={[styles.summaryCard, shadow.card]}>
-        <SummaryStat
-          label="Present"
-          value={summary.present}
-          color={colors.present}
-        />
-        <SummaryStat
-          label="Absent"
-          value={summary.absent}
-          color={colors.absent}
-        />
-        <SummaryStat
-          label="Closed"
-          value={summary.closed}
-          color={colors.closed}
-        />
-      </View>
+        {selectedDate && (
+          <View style={[styles.correctCard, shadow.card]}>
+            <Text style={[typeScale.bodyMedium, { marginBottom: spacing.sm }]}>
+              Mark {format(new Date(selectedDate + "T00:00:00"), "MMM d")} as:
+            </Text>
+            <View style={styles.statusRow}>
+              {STATUS_OPTIONS.map((status) => (
+                <Pressable
+                  key={status}
+                  onPress={() => handleStatusPick(status)}
+                  style={styles.statusChip}
+                >
+                  <Text
+                    style={[typeScale.captionMedium, { color: colors.ink }]}
+                  >
+                    {status.charAt(0).toUpperCase() + status.slice(1)}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <PrimaryButton
+              label="Cancel"
+              variant="ghost"
+              onPress={() => setSelectedDate(null)}
+              style={{ marginTop: spacing.sm }}
+            />
+          </View>
+        )}
 
-      <PrimaryButton
-        label="Export monthly report"
-        variant="secondary"
-        loading={exporting}
-        onPress={handleExport}
-        style={{ marginTop: spacing.md }}
-      />
+        <View style={[styles.summaryCard, shadow.card]}>
+          <SummaryStat
+            label="Present"
+            value={summary.present}
+            color={colors.present}
+          />
+          <SummaryStat
+            label="Absent"
+            value={summary.absent}
+            color={colors.absent}
+          />
+          <SummaryStat
+            label="Closed"
+            value={summary.closed}
+            color={colors.closed}
+          />
+        </View>
+
+        <PrimaryButton
+          label="Export monthly report"
+          variant="secondary"
+          loading={exporting}
+          onPress={handleExport}
+          style={{ marginTop: spacing.md }}
+        />
+      </SafeAreaView>
     </ScrollView>
   );
 }

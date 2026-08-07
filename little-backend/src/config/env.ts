@@ -9,7 +9,7 @@ function required(key: string): string {
 }
 
 export const env = {
-  port: Number(process.env.PORT ?? 4001),
+  port: Number(process.env.PORT ?? 4000),
   nodeEnv: process.env.NODE_ENV ?? "development",
   isProd: process.env.NODE_ENV === "production",
 
@@ -23,7 +23,7 @@ export const env = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? "",
 
   publicUploadsBaseUrl:
-    process.env.PUBLIC_UPLOADS_BASE_URL ?? "http://localhost:4001/uploads",
+    process.env.PUBLIC_UPLOADS_BASE_URL ?? "http://localhost:4000/uploads",
 
   revenueCatWebhookSecret: process.env.REVENUECAT_WEBHOOK_SECRET ?? "",
 

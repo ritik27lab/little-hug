@@ -6,8 +6,11 @@ import {
   ScrollView,
   TextInput,
   Share,
+  Pressable,
+  SafeAreaView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useApp } from "@/context/AppContext";
 import { getFamily, inviteFamilyMember } from "@/services/api";
 import { FamilyMember } from "@/types";
 import {
@@ -18,11 +21,14 @@ import {
   shadow,
 } from "@/theme/theme";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { AddChildScreen } from "@/screens/AddChildScreen";
 
 export function FamilyScreen() {
+  const { children } = useApp();
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [email, setEmail] = useState("");
   const [inviting, setInviting] = useState(false);
+  const [showAddChild, setShowAddChild] = useState(false);
 
   useEffect(() => {
     getFamily().then(setMembers);
@@ -47,86 +53,144 @@ export function FamilyScreen() {
     });
   }
 
+  if (showAddChild) {
+    return <AddChildScreen onDone={() => setShowAddChild(false)} />;
+  }
+
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={typeScale.h1}>Family</Text>
-      <Text
-        style={[
-          typeScale.body,
-          { color: colors.inkMuted, marginTop: 4, marginBottom: spacing.lg },
-        ]}
-      >
-        Share access with the other parent, a grandparent, or a nanny.
-      </Text>
-
-      {members.map((member) => (
-        <View key={member.id} style={[styles.memberRow, shadow.card]}>
-          <View style={styles.memberIcon}>
-            <Ionicons name="person-outline" size={18} color={colors.pine} />
-          </View>
-          <View style={{ flex: 1, marginLeft: spacing.sm }}>
-            <Text style={typeScale.bodyMedium}>{member.name}</Text>
-            <Text style={[typeScale.caption, { color: colors.inkFaint }]}>
-              {member.email}
-            </Text>
-          </View>
-          <View
-            style={[
-              styles.statusBadge,
-              member.status === "active"
-                ? styles.statusActive
-                : styles.statusInvited,
-            ]}
-          >
-            <Text style={typeScale.captionMedium}>
-              {member.status === "active" ? "Active" : "Invited"}
-            </Text>
-          </View>
-        </View>
-      ))}
-
-      <View style={[styles.inviteCard, shadow.card]}>
-        <Text style={[typeScale.bodyMedium, { marginBottom: spacing.sm }]}>
-          Invite someone
-        </Text>
-        <TextInput
-          value={email}
-          onChangeText={setEmail}
-          placeholder="Email address"
-          placeholderTextColor={colors.inkFaint}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          style={styles.input}
-        />
-        <PrimaryButton
-          label="Send invite"
-          onPress={handleInvite}
-          loading={inviting}
-          style={{ marginTop: spacing.sm }}
-        />
-      </View>
-
-      <View style={[styles.referralCard, shadow.card]}>
-        <Ionicons name="gift-outline" size={22} color={colors.honeyDark} />
-        <Text style={[typeScale.bodyMedium, { marginTop: spacing.sm }]}>
-          Give a free month, get a free month
-        </Text>
+    <SafeAreaView style={{ flex: 1 }}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+        <Text style={typeScale.h1}>Family</Text>
         <Text
           style={[
-            typeScale.caption,
-            { color: colors.inkMuted, marginTop: 4, marginBottom: spacing.sm },
+            typeScale.body,
+            { color: colors.inkMuted, marginTop: 4, marginBottom: spacing.lg },
           ]}
         >
-          Share Little Log with another daycare parent — you both get a month
-          free when they subscribe.
+          Share access with the other parent, a grandparent, or a nanny.
         </Text>
-        <PrimaryButton
-          label="Share invite link"
-          variant="secondary"
-          onPress={handleShareReferral}
-        />
-      </View>
-    </ScrollView>
+
+        <Text
+          style={[
+            typeScale.captionMedium,
+            { color: colors.inkFaint, marginBottom: spacing.sm },
+          ]}
+        >
+          YOUR CHILDREN
+        </Text>
+        {children.map((child) => (
+          <View key={child.id} style={[styles.memberRow, shadow.card]}>
+            <View
+              style={[styles.childDot, { backgroundColor: child.avatarColor }]}
+            />
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={typeScale.bodyMedium}>{child.name}</Text>
+              <Text style={[typeScale.caption, { color: colors.inkFaint }]}>
+                {child.daycareName}
+              </Text>
+            </View>
+          </View>
+        ))}
+        <Pressable
+          style={styles.addChildRow}
+          onPress={() => setShowAddChild(true)}
+        >
+          <Ionicons name="add-circle-outline" size={20} color={colors.pine} />
+          <Text
+            style={[
+              typeScale.bodyMedium,
+              { color: colors.pine, marginLeft: spacing.sm },
+            ]}
+          >
+            Add another child
+          </Text>
+        </Pressable>
+
+        <Text
+          style={[
+            typeScale.captionMedium,
+            {
+              color: colors.inkFaint,
+              marginTop: spacing.lg,
+              marginBottom: spacing.sm,
+            },
+          ]}
+        >
+          PEOPLE WITH ACCESS
+        </Text>
+        {members.map((member) => (
+          <View key={member.id} style={[styles.memberRow, shadow.card]}>
+            <View style={styles.memberIcon}>
+              <Ionicons name="person-outline" size={18} color={colors.pine} />
+            </View>
+            <View style={{ flex: 1, marginLeft: spacing.sm }}>
+              <Text style={typeScale.bodyMedium}>{member.name}</Text>
+              <Text style={[typeScale.caption, { color: colors.inkFaint }]}>
+                {member.email}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.statusBadge,
+                member.status === "active"
+                  ? styles.statusActive
+                  : styles.statusInvited,
+              ]}
+            >
+              <Text style={typeScale.captionMedium}>
+                {member.status === "active" ? "Active" : "Invited"}
+              </Text>
+            </View>
+          </View>
+        ))}
+
+        <View style={[styles.inviteCard, shadow.card]}>
+          <Text style={[typeScale.bodyMedium, { marginBottom: spacing.sm }]}>
+            Invite someone
+          </Text>
+          <TextInput
+            value={email}
+            onChangeText={setEmail}
+            placeholder="Email address"
+            placeholderTextColor={colors.inkFaint}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            style={styles.input}
+          />
+          <PrimaryButton
+            label="Send invite"
+            onPress={handleInvite}
+            loading={inviting}
+            style={{ marginTop: spacing.sm }}
+          />
+        </View>
+
+        <View style={[styles.referralCard, shadow.card]}>
+          <Ionicons name="gift-outline" size={22} color={colors.honeyDark} />
+          <Text style={[typeScale.bodyMedium, { marginTop: spacing.sm }]}>
+            Give a free month, get a free month
+          </Text>
+          <Text
+            style={[
+              typeScale.caption,
+              {
+                color: colors.inkMuted,
+                marginTop: 4,
+                marginBottom: spacing.sm,
+              },
+            ]}
+          >
+            Share Little Log with another daycare parent — you both get a month
+            free when they subscribe.
+          </Text>
+          <PrimaryButton
+            label="Share invite link"
+            variant="secondary"
+            onPress={handleShareReferral}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -138,7 +202,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.lg,
-    paddingBottom: spacing.xxl,
+    paddingBottom: spacing.xxl + 120,
   },
   memberRow: {
     flexDirection: "row",
@@ -148,6 +212,11 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
+  childDot: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+  },
   memberIcon: {
     width: 36,
     height: 36,
@@ -155,6 +224,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     alignItems: "center",
     justifyContent: "center",
+  },
+  addChildRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
   },
   statusBadge: {
     borderRadius: radius.pill,

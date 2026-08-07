@@ -7,11 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  Alert,
 } from "react-native";
 import { useApp } from "@/context/AppContext";
 import { login } from "@/services/api";
 import { colors, spacing, type as typeScale, radius } from "@/theme/theme";
 import { PrimaryButton } from "@/components/PrimaryButton";
+import { getErrorMessage } from "@/services/apiError";
 
 export function LoginScreen({
   onNavigateSignup,
@@ -23,25 +25,13 @@ export function LoginScreen({
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // async function handleLogin() {
-  //   setLoading(true);
-  //   try {
-  //     await login(email, password);
-  //     signIn();
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // }
-
   async function handleLogin() {
     setLoading(true);
-
     try {
-      await login(email, password);
-
-      await signIn();
-    } catch (e: any) {
-      alert(e.message || "Login failed");
+      const result = await login(email, password);
+      await signIn(result.token, result.refreshToken);
+    } catch (err) {
+      Alert.alert("Couldn't log in", getErrorMessage(err));
     } finally {
       setLoading(false);
     }

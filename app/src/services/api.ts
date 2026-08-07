@@ -15,19 +15,23 @@ import {
   mockSubscription,
   mockFamily,
 } from "./mockData";
+import { getAccessToken } from "./tokenStore";
 
-// Flip this to false once the Node/Express + Prisma backend from
-// api-documentation.md is deployed, and set EXPO_PUBLIC_API_URL.
-const USE_MOCK = true;
+// Now pointing at your real backend — see .env's EXPO_PUBLIC_API_URL.
+const USE_MOCK = false;
+
+console.log("process.env.EXPO_PUBLIC_API_URL", process.env.EXPO_PUBLIC_API_URL);
 
 export const apiClient = axios.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL ?? "https://api.littlelog.app/v1",
   timeout: 10000,
 });
 
-apiClient.interceptors.request.use((config) => {
-  // TODO: attach the stored auth token once auth is wired up
-  // config.headers.Authorization = `Bearer ${token}`;
+apiClient.interceptors.request.use(async (config) => {
+  const token = await getAccessToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
@@ -36,32 +40,42 @@ function delay<T>(value: T, ms = 400): Promise<T> {
 }
 
 // ---------- Auth ----------
-// POST /auth/register, POST /auth/login, POST /auth/refresh — see docs.
-export async function login(email: string, _password: string) {
+interface AuthResult {
+  token: string;
+  refreshToken?: string;
+  userId: string;
+  email: string;
+  name?: string;
+}
+
+export async function login(
+  email: string,
+  password: string,
+): Promise<AuthResult> {
   if (USE_MOCK) {
     return delay({ token: "mock-token", userId: "user_1", email });
   }
-  const { data } = await apiClient.post("/auth/login", {
-    email,
-    password: _password,
-  });
+  const { data } = await apiClient.post("/auth/login", { email, password });
   return data;
 }
 
-export async function register(name: string, email: string, _password: string) {
+export async function register(
+  name: string,
+  email: string,
+  password: string,
+): Promise<AuthResult> {
   if (USE_MOCK) {
     return delay({ token: "mock-token", userId: "user_1", email, name });
   }
   const { data } = await apiClient.post("/auth/register", {
     name,
     email,
-    password: _password,
+    password,
   });
   return data;
 }
 
 // ---------- Children ----------
-// GET/POST /children, PATCH/DELETE /children/:id
 export async function getChildren(): Promise<Child[]> {
   if (USE_MOCK) return delay(mockChildren);
   const { data } = await apiClient.get("/children");
@@ -75,8 +89,6 @@ export async function addChild(child: Omit<Child, "id">): Promise<Child> {
 }
 
 // ---------- Drop-off / pickup events ----------
-// GET /children/:id/events, POST /children/:id/events (manual correction),
-// POST /events/ingest (called by the on-device geofencing task)
 export async function getEvents(childId: string): Promise<DropoffEvent[]> {
   if (USE_MOCK) return delay(mockEvents.filter((e) => e.childId === childId));
   const { data } = await apiClient.get(`/children/${childId}/events`);
@@ -106,7 +118,6 @@ export async function logManualEvent(
 }
 
 // ---------- Attendance / calendar ----------
-// GET /children/:id/attendance?month=YYYY-MM, PATCH /attendance/:date
 export async function getAttendance(childId: string): Promise<AttendanceDay[]> {
   if (USE_MOCK) return delay(mockAttendance[childId] ?? []);
   const { data } = await apiClient.get(`/children/${childId}/attendance`);
@@ -149,7 +160,6 @@ export async function exportAttendanceReport(
 }
 
 // ---------- Agenda scans ----------
-// POST /children/:id/agenda-scans (multipart image upload), GET /children/:id/agenda-scans
 export async function getAgendaScans(childId: string): Promise<AgendaScan[]> {
   if (USE_MOCK)
     return delay(mockAgendaScans.filter((a) => a.childId === childId));
@@ -189,7 +199,6 @@ export async function scanAgendaImage(
 }
 
 // ---------- Subscription ----------
-// GET /subscription, POST /subscription/webhook (store -> server, not called from app)
 export async function getSubscription(): Promise<Subscription> {
   if (USE_MOCK) return delay(mockSubscription);
   const { data } = await apiClient.get("/subscription");
@@ -197,7 +206,6 @@ export async function getSubscription(): Promise<Subscription> {
 }
 
 // ---------- Family sharing ----------
-// GET /family, POST /family/invite
 export async function getFamily(): Promise<FamilyMember[]> {
   if (USE_MOCK) return delay(mockFamily);
   const { data } = await apiClient.get("/family");

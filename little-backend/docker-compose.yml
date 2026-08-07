@@ -1,26 +1,44 @@
 services:
+  db:
+    image: postgres:16
+    container_name: little-log-db
+    environment:
+      POSTGRES_USER: little-hug
+      POSTGRES_PASSWORD: little-hug
+      POSTGRES_DB: little_log
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      # 5433 on purpose, not 5432 — your native Postgres already holds
+      # 5432 on your Mac. This just lets Beekeeper (or psql) connect to
+      # the containerized db directly for inspection; the backend
+      # container still talks to it via "db:5432" on the internal
+      # network either way, unaffected by this mapping.
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U little-hug -d little_log"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   backend:
     build: .
     container_name: little-log-backend
     ports:
-      - "4001:4001"
+      - "4000:4000"
     env_file:
       - .env
     environment:
-      # Inside a container, "localhost" means the container itself — not
-      # your Mac. host.docker.internal is Docker's special DNS name for
-      # reaching services running on the host machine, which is where your
-      # native Postgres install lives. This overrides just the host in
-      # DATABASE_URL; everything else still loads from .env above.
-      DATABASE_URL: "postgresql://little-hug:little-hug@host.docker.internal:5432/little_log?schema=public"
+      # Overrides .env's DATABASE_URL host. "db" is this compose file's
+      # service name above — Docker Compose resolves it automatically on
+      # the shared network, no IP/hostname wrangling needed.
+      DATABASE_URL: "postgresql://little-hug:little-hug@db:5432/little_log?schema=public"
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
-      # Named volume so uploaded agenda photos survive `docker compose down`
-      # / image rebuilds instead of living only inside the container layer.
       - uploads_data:/app/uploads
-    extra_hosts:
-      # host.docker.internal is automatic on Docker Desktop (Mac/Windows).
-      # This line is what makes it also work on Linux hosts/CI.
-      - "host.docker.internal:host-gateway"
 
 volumes:
+  postgres_data:
   uploads_data:

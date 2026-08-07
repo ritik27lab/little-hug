@@ -13,7 +13,7 @@ npx prisma generate
 npm run dev
 ```
 
-Server listens on `PORT` (default `4001`). Health check: `GET /health`.
+Server listens on `PORT` (default `4000`). Health check: `GET /health`.
 
 This was written and type-checked (`npx tsc --noEmit`, zero errors) without
 a live Postgres connection, so `prisma generate`/`migrate` are the first

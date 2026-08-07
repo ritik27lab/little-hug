@@ -7,7 +7,7 @@
     "contact": { "name": "Little Log" }
   },
   "servers": [
-    { "url": "http://localhost:4001", "description": "Local development" },
+    { "url": "http://localhost:4000", "description": "Local development" },
     { "url": "https://api.littlelog.app", "description": "Production" }
   ],
   "tags": [
