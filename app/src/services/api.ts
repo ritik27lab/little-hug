@@ -16,13 +16,20 @@ import {
   mockFamily,
 } from "./mockData";
 import { getAccessToken } from "./tokenStore";
+import { PRODUCTION_URL } from "./config";
 
-// Now pointing at your real backend — see .env's EXPO_PUBLIC_API_URL.
+// Reads .env's EXPO_PUBLIC_API_URL first, so you can switch between local
+// Docker and the live Render deployment without touching code — falls
+// back to the deployed backend if that's ever unset.
 const USE_MOCK = false;
 
 export const apiClient = axios.create({
-  baseURL: process.env.EXPO_PUBLIC_API_URL ?? "https://api.littlelog.app/v1",
-  timeout: 10000,
+  baseURL: process.env.EXPO_PUBLIC_API_URL ?? PRODUCTION_URL,
+  // 45s, not the usual 10s — Render's free tier spins the backend down
+  // after 15 minutes idle, and a cold start can take 30-60s. A short
+  // timeout here turns a normal cold start into a false "can't reach the
+  // server" error for anyone testing after the backend's been idle.
+  timeout: 45000,
 });
 
 apiClient.interceptors.request.use(async (config) => {
