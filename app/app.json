@@ -1,0 +1,39 @@
+{
+  "expo": {
+    "name": "Little Log",
+    "slug": "little-log",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#F1F4EC"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.littlelog.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Little Log uses your location to automatically detect drop-off and pickup at your child's daycare.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Little Log needs background location to log drop-off and pickup even when the app is closed.",
+        "NSCameraUsageDescription": "Little Log uses the camera to scan the daycare agenda."
+      }
+    },
+    "android": {
+      "package": "com.littlelog.app",
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow Little Log to use your location to detect drop-off and pickup."
+        }
+      ]
+    ]
+  }
+}

@@ -1,0 +1,690 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Little Log API",
+    "description": "Parent-first daycare drop-off/pickup tracking, AI-scanned agendas, and attendance calendar. Matches the Node/Express + Prisma backend and the React Native app's src/services/api.ts one-to-one.",
+    "version": "1.0.0",
+    "contact": { "name": "Little Log" }
+  },
+  "servers": [
+    { "url": "http://localhost:4001", "description": "Local development" },
+    { "url": "https://api.littlelog.app", "description": "Production" }
+  ],
+  "tags": [
+    { "name": "Auth" },
+    { "name": "Children" },
+    { "name": "Events" },
+    { "name": "Attendance" },
+    { "name": "Agenda" },
+    { "name": "Subscription" },
+    { "name": "Family" },
+    { "name": "Health" }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Health check",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Service is up",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "status": { "type": "string", "example": "ok" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Create a parent account and start the free trial",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" },
+              "example": { "name": "Yash Patel", "email": "yash@example.com", "password": "correct-horse-1" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "409": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log in with email and password",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" },
+              "example": { "email": "yash@example.com", "password": "correct-horse-1" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Logged in",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Exchange a refresh token for a new access token",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["refreshToken"],
+                "properties": { "refreshToken": { "type": "string" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New access token",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "token": { "type": "string" } } }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/children": {
+      "get": {
+        "tags": ["Children"],
+        "summary": "List the authenticated user's children",
+        "responses": {
+          "200": {
+            "description": "List of children",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Child" } }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "post": {
+        "tags": ["Children"],
+        "summary": "Add a child",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChildCreate" } } }
+        },
+        "responses": {
+          "201": {
+            "description": "Child created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Child" } } }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/v1/children/{id}": {
+      "parameters": [{ "$ref": "#/components/parameters/ChildId" }],
+      "patch": {
+        "tags": ["Children"],
+        "summary": "Update a child (e.g. after switching crèche)",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/ChildUpdate" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated child",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Child" } } }
+          },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      },
+      "delete": {
+        "tags": ["Children"],
+        "summary": "Remove a child",
+        "responses": {
+          "204": { "description": "Deleted" },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/children/{id}/events": {
+      "parameters": [{ "$ref": "#/components/parameters/ChildId" }],
+      "get": {
+        "tags": ["Events"],
+        "summary": "List drop-off/pickup events for a child on a given day",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "description": "ISO date (YYYY-MM-DD). Defaults to today.",
+            "schema": { "type": "string", "format": "date" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Events for that day",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/DropoffEvent" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Events"],
+        "summary": "Manually log a drop-off or pickup",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ManualEventCreate" },
+              "example": { "type": "dropoff", "timestamp": "2026-07-24T08:42:00.000Z", "source": "manual" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event logged",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DropoffEvent" } } }
+          }
+        }
+      }
+    },
+    "/v1/events/ingest": {
+      "post": {
+        "tags": ["Events"],
+        "summary": "Background geofencing task reports a drop-off/pickup transition",
+        "description": "Called by the app's on-device geofencing task, not a direct user action. Idempotent: duplicate transitions for the same child/type within 5 minutes are deduped server-side.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/IngestEventCreate" },
+              "example": {
+                "childId": "child_1",
+                "type": "dropoff",
+                "timestamp": "2026-07-24T08:42:00.000Z",
+                "wifiSsid": "LittleSprouts-Guest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Event ingested",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/DropoffEvent" } } }
+          },
+          "404": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/children/{id}/attendance": {
+      "parameters": [{ "$ref": "#/components/parameters/ChildId" }],
+      "get": {
+        "tags": ["Attendance"],
+        "summary": "List a child's attendance days",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "description": "YYYY-MM. Omit to list all history.",
+            "schema": { "type": "string", "example": "2026-07" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attendance days",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AttendanceDay" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/children/{id}/attendance/{date}": {
+      "parameters": [
+        { "$ref": "#/components/parameters/ChildId" },
+        {
+          "name": "date",
+          "in": "path",
+          "required": true,
+          "description": "ISO date (YYYY-MM-DD)",
+          "schema": { "type": "string", "format": "date" }
+        }
+      ],
+      "patch": {
+        "tags": ["Attendance"],
+        "summary": "Manually correct a day's attendance status",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AttendanceCorrect" },
+              "example": { "status": "absent" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Corrected attendance day",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AttendanceDay" } } }
+          }
+        }
+      }
+    },
+    "/v1/children/{id}/attendance/export": {
+      "parameters": [{ "$ref": "#/components/parameters/ChildId" }],
+      "get": {
+        "tags": ["Attendance"],
+        "summary": "Generate a monthly attendance report (for billing disputes)",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "description": "YYYY-MM. Defaults to the current month.",
+            "schema": { "type": "string", "example": "2026-07" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed URL to the generated report",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "url": { "type": "string", "format": "uri" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/children/{id}/agenda-scans": {
+      "parameters": [{ "$ref": "#/components/parameters/ChildId" }],
+      "get": {
+        "tags": ["Agenda"],
+        "summary": "List past agenda scans for a child",
+        "responses": {
+          "200": {
+            "description": "Agenda scans, most recent first",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/AgendaScan" } }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Agenda"],
+        "summary": "Upload a photographed agenda for AI parsing",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["image"],
+                "properties": {
+                  "image": { "type": "string", "format": "binary", "description": "JPEG, PNG, or WEBP, max 10MB" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Parsed agenda",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AgendaScan" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" },
+          "422": {
+            "description": "Image couldn't be read as an agenda",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" },
+                "example": { "error": "unreadable_image", "message": "The agenda photo wasn't readable — try a clearer, well-lit shot." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/subscription": {
+      "get": {
+        "tags": ["Subscription"],
+        "summary": "Get the current user's subscription status",
+        "responses": {
+          "200": {
+            "description": "Subscription state",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Subscription" } } }
+          }
+        }
+      }
+    },
+    "/v1/subscription/webhook": {
+      "post": {
+        "tags": ["Subscription"],
+        "summary": "RevenueCat webhook (server-to-server, not called by the app)",
+        "description": "Authenticated with a shared secret in the Authorization header (REVENUECAT_WEBHOOK_SECRET), not a user JWT.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object" },
+              "example": {
+                "event": {
+                  "type": "INITIAL_PURCHASE",
+                  "app_user_id": "user_1",
+                  "product_id": "littlelog_monthly",
+                  "expiration_at_ms": "1785000000000"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Acknowledged",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "properties": { "received": { "type": "boolean" } } }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    },
+    "/v1/family": {
+      "get": {
+        "tags": ["Family"],
+        "summary": "List everyone with access to the user's children",
+        "responses": {
+          "200": {
+            "description": "Family members",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/FamilyMember" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/family/invite": {
+      "post": {
+        "tags": ["Family"],
+        "summary": "Invite someone to share access (other parent, grandparent, nanny)",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FamilyInviteCreate" },
+              "example": { "email": "grandma@example.com", "relation": "grandparent" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Invite created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FamilyMember" } } }
+          },
+          "400": { "$ref": "#/components/responses/Error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Access token returned from /v1/auth/login or /v1/auth/register."
+      }
+    },
+    "parameters": {
+      "ChildId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "Child ID",
+        "schema": { "type": "string" },
+        "example": "child_1"
+      }
+    },
+    "responses": {
+      "Error": {
+        "description": "Error response",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "ValidationError": {
+        "description": "Request body failed validation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "allOf": [
+                { "$ref": "#/components/schemas/Error" },
+                { "type": "object", "properties": { "details": { "type": "object" } } }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string", "example": "not_found" },
+          "message": { "type": "string", "example": "Child not found" }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8, "maxLength": 128 }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string" }
+        }
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string" },
+          "refreshToken": { "type": "string" },
+          "userId": { "type": "string" },
+          "email": { "type": "string" },
+          "name": { "type": "string" }
+        }
+      },
+      "Child": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "example": "child_1" },
+          "name": { "type": "string", "example": "Aarav" },
+          "birthDate": { "type": "string", "format": "date", "example": "2023-04-12" },
+          "daycareName": { "type": "string", "example": "Little Sprouts Crèche" },
+          "daycareLat": { "type": "number", "example": 50.8503 },
+          "daycareLng": { "type": "number", "example": 4.3517 },
+          "geofenceRadiusM": { "type": "integer", "example": 120 },
+          "avatarColor": { "type": "string", "example": "#E8A33D" }
+        }
+      },
+      "ChildCreate": {
+        "type": "object",
+        "required": ["name", "birthDate", "daycareName", "daycareLat", "daycareLng", "avatarColor"],
+        "properties": {
+          "name": { "type": "string" },
+          "birthDate": { "type": "string", "format": "date" },
+          "daycareName": { "type": "string" },
+          "daycareLat": { "type": "number" },
+          "daycareLng": { "type": "number" },
+          "geofenceRadiusM": { "type": "integer", "default": 120 },
+          "avatarColor": { "type": "string" }
+        }
+      },
+      "ChildUpdate": {
+        "type": "object",
+        "description": "All fields optional — send only what changed.",
+        "properties": {
+          "name": { "type": "string" },
+          "birthDate": { "type": "string", "format": "date" },
+          "daycareName": { "type": "string" },
+          "daycareLat": { "type": "number" },
+          "daycareLng": { "type": "number" },
+          "geofenceRadiusM": { "type": "integer" },
+          "avatarColor": { "type": "string" }
+        }
+      },
+      "DropoffEvent": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "childId": { "type": "string" },
+          "type": { "type": "string", "enum": ["dropoff", "pickup"] },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "source": { "type": "string", "enum": ["auto", "manual"] },
+          "wifiSsid": { "type": "string", "nullable": true }
+        }
+      },
+      "ManualEventCreate": {
+        "type": "object",
+        "required": ["type", "timestamp"],
+        "properties": {
+          "type": { "type": "string", "enum": ["dropoff", "pickup"] },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "source": { "type": "string", "enum": ["manual"], "default": "manual" }
+        }
+      },
+      "IngestEventCreate": {
+        "type": "object",
+        "required": ["childId", "type", "timestamp"],
+        "properties": {
+          "childId": { "type": "string" },
+          "type": { "type": "string", "enum": ["dropoff", "pickup"] },
+          "timestamp": { "type": "string", "format": "date-time" },
+          "wifiSsid": { "type": "string", "nullable": true }
+        }
+      },
+      "AttendanceDay": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "childId": { "type": "string" },
+          "status": { "type": "string", "enum": ["present", "absent", "closed", "unknown"] },
+          "dropoffTime": { "type": "string", "nullable": true, "example": "08:42" },
+          "pickupTime": { "type": "string", "nullable": true, "example": "17:15" },
+          "note": { "type": "string", "nullable": true },
+          "correctedManually": { "type": "boolean" }
+        }
+      },
+      "AttendanceCorrect": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "string", "enum": ["present", "absent", "closed"] }
+        }
+      },
+      "AgendaActivity": {
+        "type": "object",
+        "properties": {
+          "time": { "type": "string", "nullable": true, "example": "09:30" },
+          "label": { "type": "string", "example": "Sensory play — water table" }
+        }
+      },
+      "AgendaDay": {
+        "type": "object",
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "meals": { "type": "array", "items": { "type": "string" } },
+          "naps": { "type": "array", "items": { "type": "string" } },
+          "activities": { "type": "array", "items": { "$ref": "#/components/schemas/AgendaActivity" } },
+          "notes": { "type": "array", "items": { "type": "string" } }
+        }
+      },
+      "AgendaScan": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "childId": { "type": "string" },
+          "imageUri": { "type": "string", "format": "uri" },
+          "scannedAt": { "type": "string", "format": "date-time" },
+          "weekOf": { "type": "string", "format": "date" },
+          "detectedLanguage": { "type": "string", "nullable": true, "example": "fr" },
+          "days": { "type": "array", "items": { "$ref": "#/components/schemas/AgendaDay" } }
+        }
+      },
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "plan": { "type": "string", "enum": ["free", "monthly", "yearly"] },
+          "status": { "type": "string", "enum": ["trialing", "active", "past_due", "canceled", "none"] },
+          "trialEndsAt": { "type": "string", "format": "date-time", "nullable": true },
+          "renewsAt": { "type": "string", "format": "date-time", "nullable": true },
+          "childrenIncluded": { "type": "integer" }
+        }
+      },
+      "FamilyMember": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string", "format": "email" },
+          "relation": { "type": "string", "enum": ["parent", "grandparent", "nanny", "other"] },
+          "status": { "type": "string", "enum": ["invited", "active"] }
+        }
+      },
+      "FamilyInviteCreate": {
+        "type": "object",
+        "required": ["email", "relation"],
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "relation": { "type": "string", "enum": ["parent", "grandparent", "nanny", "other"] }
+        }
+      }
+    }
+  }
+}

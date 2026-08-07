@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  createdAt    DateTime      @default(now())
+  access       ChildAccess[]
+  subscription Subscription?
+
+  @@map("users")
+}
+
+model Child {
+  id              String   @id @default(cuid())
+  name            String
+  birthDate       DateTime
+  daycareName     String
+  daycareLat      Float
+  daycareLng      Float
+  daycareTimezone String   @default("Europe/Brussels")
+  geofenceRadiusM Int      @default(120)
+  avatarColor     String
+  createdAt       DateTime @default(now())
+
+  access      ChildAccess[]
+  events      DropoffEvent[]
+  attendance  AttendanceDay[]
+  agendaScans AgendaScan[]
+
+  @@map("children")
+}
+
+// Join table: which users can see/edit which children, and how.
+model ChildAccess {
+  id       String   @id @default(cuid())
+  userId   String
+  childId  String
+  relation String // "parent" | "grandparent" | "nanny" | "other"
+  status   String // "invited" | "active"
+  invitedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, childId])
+  @@map("child_access")
+}
+
+model DropoffEvent {
+  id        String   @id @default(cuid())
+  childId   String
+  type      String // "dropoff" | "pickup"
+  timestamp DateTime
+  source    String // "auto" | "manual"
+  wifiSsid  String?
+  createdAt DateTime @default(now())
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@index([childId, timestamp])
+  @@map("dropoff_events")
+}
+
+model AttendanceDay {
+  id                String   @id @default(cuid())
+  childId           String
+  date              DateTime @db.Date
+  status            String // "present" | "absent" | "closed" | "unknown"
+  dropoffTime       String?
+  pickupTime        String?
+  note              String?
+  correctedManually Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, date])
+  @@map("attendance_days")
+}
+
+model AgendaScan {
+  id               String   @id @default(cuid())
+  childId          String
+  imageUri         String
+  scannedAt        DateTime @default(now())
+  weekOf           DateTime @db.Date
+  detectedLanguage String?
+  days             Json // AgendaDay[]
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@map("agenda_scans")
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  plan             String    @default("free") // "free" | "monthly" | "yearly"
+  status           String    @default("none") // "trialing" | "active" | "past_due" | "canceled" | "none"
+  trialEndsAt      DateTime?
+  renewsAt         DateTime?
+  childrenIncluded Int       @default(1)
+  storeCustomerId  String? // RevenueCat app_user_id / store subscriber id
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}

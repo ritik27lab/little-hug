@@ -1,0 +1,26 @@
+services:
+  backend:
+    build: .
+    container_name: little-log-backend
+    ports:
+      - "4001:4001"
+    env_file:
+      - .env
+    environment:
+      # Inside a container, "localhost" means the container itself — not
+      # your Mac. host.docker.internal is Docker's special DNS name for
+      # reaching services running on the host machine, which is where your
+      # native Postgres install lives. This overrides just the host in
+      # DATABASE_URL; everything else still loads from .env above.
+      DATABASE_URL: "postgresql://little-hug:little-hug@host.docker.internal:5432/little_log?schema=public"
+    volumes:
+      # Named volume so uploaded agenda photos survive `docker compose down`
+      # / image rebuilds instead of living only inside the container layer.
+      - uploads_data:/app/uploads
+    extra_hosts:
+      # host.docker.internal is automatic on Docker Desktop (Mac/Windows).
+      # This line is what makes it also work on Linux hosts/CI.
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  uploads_data:
